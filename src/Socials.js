@@ -8,7 +8,7 @@ class Social extends Component {
     const { title, image, link } = this.props.social;
 
     return (
-      <div
+      <span
         style={{
           display: "inline-block",
           width: 200,
@@ -16,16 +16,19 @@ class Social extends Component {
         }}
       >
         <h3> {title} </h3>{" "}
-        <img
-          src={image}
-          alt="profile"
-          style={{
-            width: 50,
-            height: 20
-          }}
-        />{" "}
-        <p>  </p> <a href={link}> {link}</a>{" "}
-      </div>
+        <a href={link}>
+          <img
+            src={image}
+            alt="profile"
+            style={{
+              width: 35,
+              height: 35,
+              margin: 10
+            }}
+          />{" "}
+        </a>
+
+      </span>
     );
   }
 }

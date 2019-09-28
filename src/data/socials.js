@@ -1,12 +1,13 @@
 import email_icon from '../assets/email_icon.png';
 import github_icon from '../assets/github_icon.png';
 import linkedin_icon from '../assets/linkedin_icon.png';
+import twitter_icon from '../assets/twitter_icon.png';
 
 const SOCIALS = [
   {
     id: 1,
     title: 'My mail',
-    link: 'fahimermo@gmail.com',
+    link: 'mailto:fahimermo@gmail.com',
     image: email_icon
   },
   {
@@ -20,6 +21,12 @@ const SOCIALS = [
     title: 'My LinkedIn',
     link: 'https://www.linkedin.com/in/elias-mohammadi-42a73215a/',
     image: linkedin_icon
+  },
+  {
+    id: 4,
+    title: 'My twitter',
+    link: 'https://twitter.com/fahimer/',
+    image: twitter_icon
   }
 ];
 

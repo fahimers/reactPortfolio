@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDom from 'react-dom';
 import App from './App';
+import './index.css';
 
 ReactDom.render(<App />, document.getElementById('root'));
 
@@ -24,19 +25,19 @@ animal1.speak();
 class Lion extends Animal{
     constructor(name, age, furColor, speed){
 
-    
+
     super(name,age);
 
     this.furColor = furColor;
     this.speed = speed;
-    
+
 }
 
 roar(){
-    console.log('ROOOR! I have', 
-    this.furColor, 
-    'fur and I  can run ', 
-    this.speed, 
+    console.log('ROOOR! I have',
+    this.furColor,
+    'fur and I  can run ',
+    this.speed,
     'km an hour!');
 }
 }
