@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import Projects from './Projects';
 import Socials from './Socials';
-import eli from './assets/Eli.jpg';
+import eli from '../assets/Eli.jpg';
 import Title from './Title';
 /*
 class RegularClass{}
