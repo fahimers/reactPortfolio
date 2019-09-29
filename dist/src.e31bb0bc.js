@@ -32350,13 +32350,14 @@ function (_Component) {
     });
 
     _defineProperty(_assertThisInitialized(_this), "animateTitles", function () {
-      setInterval(function () {
+      _this.titleInterval = setInterval(function () {
         var titleIndex = (_this.state.titleIndex + 1) % TITLES.length;
 
         _this.setState({
           titleIndex: titleIndex
         });
       }, 4000);
+      console.log('this.titleInterval', _this.titleInterval);
     });
 
     return _this;
@@ -32367,6 +32368,12 @@ function (_Component) {
     value: function componentDidMount() {
       console.log('Title component has mounted');
       this.animateTitles();
+    }
+  }, {
+    key: "componentWillUnmount",
+    value: function componentWillUnmount() {
+      console.log('Title component will unmount');
+      clearInterval(this.titleInterval);
     }
   }, {
     key: "render",
@@ -32474,7 +32481,7 @@ function (_Component) {
         src: _Eli.default,
         alt: "profile",
         className: "profile"
-      }), _react.default.createElement("h1", null, " Hello"), _react.default.createElement("p", null, " My name is Elias"), _react.default.createElement(_Title.default, null), _react.default.createElement("p", null, "I always strive to be highly dedicated and ambitious as a developer. I love to solve new and exciting challenges and I have an eye for desgin, my favorite languages are Javascript,react, Java, HTML, CSS and SQL . My former employer would describe me as a fast-paced, stress-resistant and ambitious guy. I work well in groups and have a big interest in IT."), this.state.displayBio ? _react.default.createElement("div", null, _react.default.createElement("p", null, "I live in Sweden, Stockholm"), _react.default.createElement("p", null, "Besides coding everyday I also love gaming and anime."), _react.default.createElement("button", {
+      }), _react.default.createElement("h1", null, " Hello"), _react.default.createElement("p", null, " My name is Elias"), this.state.displayBio ? _react.default.createElement(_Title.default, null) : null, _react.default.createElement("p", null, "I always strive to be highly dedicated and ambitious as a developer. I love to solve new and exciting challenges and I have an eye for desgin, my favorite languages are Javascript,react, Java, HTML, CSS and SQL . My former employer would describe me as a fast-paced, stress-resistant and ambitious guy. I work well in groups and have a big interest in IT."), this.state.displayBio ? _react.default.createElement("div", null, _react.default.createElement("p", null, "I live in Sweden, Stockholm"), _react.default.createElement("p", null, "Besides coding everyday I also love gaming and anime."), _react.default.createElement("button", {
         onClick: this.toggleDisplayBio
       }, "Show Less ")) : _react.default.createElement("div", null, _react.default.createElement("button", {
         onClick: this.toggleDisplayBio
@@ -32641,7 +32648,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "65295" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57411" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
