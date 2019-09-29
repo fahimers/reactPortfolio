@@ -4,11 +4,14 @@
   "private": true,
   "dependencies": {
     "@babel/plugin-proposal-class-properties": "^7.5.5",
+    "live-server": "^1.2.1",
     "react": "^16.10.0",
     "react-dom": "^16.10.0"
   },
   "scripts": {
-    "dev": "parcel src/index.html"
+    "dev": "parcel src/index.html",
+    "build": "parcel build src/index.html",
+    "start": "npm run build && live-server dist"
   },
   "devDependencies": {
     "@babel/core": "^7.6.2",
