@@ -31,7 +31,7 @@ class App extends Component {
                 <h1> Hello</h1>
                 <p> My name is Elias</p>
 
-                {this.state.displayBio ? <Title /> : null}
+                <Title />
 
                 <p>I always strive to be highly dedicated and ambitious as a developer. I love to solve new and exciting challenges and I have an eye for desgin, my favorite languages are Javascript,react, Java, HTML, CSS and SQL .
                My former employer would describe me as a fast-paced, stress-resistant and ambitious guy. I work well in groups and have a big interest in IT.</p>

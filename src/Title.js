@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { clearTimeout } from 'timers';
 
 const TITLES = [
   'a web-developer',
@@ -9,19 +10,16 @@ const TITLES = [
 ];
 
 class Title extends Component {
-  state = { titleIndex: 0 };
+  state = { titleIndex: 0, fadeIn: true };
 
   componentDidMount() {
-
-    console.log('Title component has mounted');
+    this.timeout = setTimeout(() => this.setState({ fadeIn: false }), 2000);
     this.animateTitles();
-
   }
 
   componentWillUnmount() {
-    console.log('Title component will unmount');
     clearInterval(this.titleInterval);
-
+    clearTimeout(this.timeout);
   }
 
   animateTitles = () => {
@@ -29,8 +27,9 @@ class Title extends Component {
     this.titleInterval = setInterval(() => {
       const titleIndex = (this.state.titleIndex + 1) % TITLES.length;
 
-      this.setState({ titleIndex });
-    }, 4000)
+      this.setState({ titleIndex, fadeIn: true });
+      this.timeout = setTimeout(() => this.setState({ fadeIn: false }), 2000);
+    }, 4000);
 
     console.log('this.titleInterval', this.titleInterval);
   }
@@ -39,10 +38,11 @@ class Title extends Component {
 
   render() {
 
-    const title = TITLES[this.state.titleIndex];
+    const { fadeIn, titleIndex } = this.state;
+    const title = TITLES[titleIndex];
 
     return (
-      <p> I am {title}</p>
+      <p className={fadeIn ? 'title-fade-in' : 'title-fade-out'} > I am {title}</p>
     )
   }
 }
