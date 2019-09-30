@@ -3,6 +3,7 @@ import Projects from './Projects';
 import Socials from './Socials';
 import eli from '../assets/Eli.jpg';
 import Title from './Title';
+import Jokes from './Jokes';
 /*
 class RegularClass{}
  
@@ -53,13 +54,12 @@ class App extends Component {
                         )
 
                 }
-
-
-
                 <hr />
                 <Projects />
                 <hr />
                 <Socials />
+                <hr />
+                <Jokes />
             </div>
 
         )
