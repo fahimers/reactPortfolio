@@ -32832,7 +32832,7 @@ function (_Component) {
       var _this$state$joke = this.state.joke,
           setup = _this$state$joke.setup,
           punchline = _this$state$joke.punchline;
-      return _react.default.createElement("div", null, _react.default.createElement("h2", null, "Highlighted Joke"), _react.default.createElement("p", null, setup), _react.default.createElement("p", null, _react.default.createElement("em", null, " ", punchline, " "), " "));
+      return _react.default.createElement("div", null, _react.default.createElement("h2", null, "Corny Jokes"), _react.default.createElement("p", null, setup), _react.default.createElement("p", null, _react.default.createElement("em", null, " ", punchline, " "), " "));
     }
   }]);
 

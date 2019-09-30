@@ -16,7 +16,7 @@ class Jokes extends Component {
 
     return (
       <div>
-        <h2>Highlighted Joke</h2>
+        <h2>Corny Jokes</h2>
         <p>{setup}</p>
         <p><em> {punchline} </em> </p>
 
