@@ -2,8 +2,26 @@ import React from 'react';
 import ReactDom from 'react-dom';
 import App from './components/App';
 import './index.css';
+import { resolve } from 'path';
 
 ReactDom.render(<App />, document.getElementById('root'));
+
+
+new Promise(resolve, reject => {
+
+    return reject(new Error('Wrong API call'));
+    setTimeout(() => {
+
+        console.log('Bears');
+        resolve('Bears, Beets, Battlestar Galactica');
+    }, 2000);
+
+})
+    .then(quote => {
+        console.log(quote);
+
+    })
+    .catch(error => console.log('error', error));
 
 
 /*
