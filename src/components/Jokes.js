@@ -12,13 +12,15 @@ class Jokes extends Component {
   componentDidMount() {
     fetch('https://official-joke-api.appspot.com/random_joke')
       .then(response => response.json())
-      .then(json => this.setState({ joke: json }));
+      .then(json => this.setState({ joke: json }))
+      .catch(error => alert(error.message));
 
   }
   feathJokes = () => {
     fetch('https://official-joke-api.appspot.com/random_ten')
       .then(response => response.json())
-      .then(json => this.setState({ jokes: json }));
+      .then(json => this.setState({ jokes: json }))
+      .catch(error => alert(error.message));
   }
   render() {
 
@@ -29,7 +31,7 @@ class Jokes extends Component {
         <h2>Highlighted Joke</h2>
         <Joke joke={this.state.joke} />
         <hr />
-        <h3> Want ten new jokes?</h3>
+        <h3> Here are ten new jokes!</h3>
         <button onClick={this.feathJokes}>Click me!</button>
         {this.state.jokes.map(joke => (<Joke key={joke.id} joke={joke} />))}
 
