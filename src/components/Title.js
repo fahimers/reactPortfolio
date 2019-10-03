@@ -6,7 +6,7 @@ const TITLES = [
   'a funny guy',
   'a constant learner',
   'a survivor.',
-  'I am hardworking and reliable'
+  'hardworking and reliable'
 ];
 
 class Title extends Component {

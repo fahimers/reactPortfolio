@@ -3,7 +3,7 @@ import Projects from './Projects';
 import Socials from './Socials';
 import eli from '../assets/Eli.jpg';
 import Title from './Title';
-import Jokes from './Jokes';
+
 /*
 class RegularClass{}
  
@@ -26,8 +26,11 @@ class App extends Component {
     }
     render() {
 
+        console.log('hi');
         return (
             <div>
+
+
                 <img src={eli} alt='profile' className='profile' />
                 <h1> Hello</h1>
                 <p> My name is Elias</p>
@@ -58,12 +61,13 @@ class App extends Component {
                 <Projects />
                 <hr />
                 <Socials />
-                <hr />
-                <Jokes />
+
             </div>
 
         )
     }
 }
+
+
 
 export default App;

@@ -7,13 +7,14 @@ import './index.css';
 import { resolve } from 'path';
 import Jokes from './components/Jokes'
 import { BrowserHistory } from 'react-history'
+import Header from './components/Header';
 
-const history = createBrowserHistory();
+
 ReactDom.render(
-    <Router history={history}>
+    <Router history={createBrowserHistory()}>
         <Switch>
-            <Route exact={true} path='/' component={App} />
-            <Route path='/jokes' component={Jokes} />
+            <Route exact path='/' render={() => <Header> <App /> </Header>} />
+            <Route path='/jokes' render={() => <Header><Jokes /></Header>} />
         </Switch>
     </Router>,
     document.getElementById('root')
