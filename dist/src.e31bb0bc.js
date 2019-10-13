@@ -35961,998 +35961,7 @@ if ("development" !== "production") {
     style: _propTypes.default.object
   });
 }
-},{"react-router":"../node_modules/react-router/esm/react-router.js","@babel/runtime/helpers/esm/inheritsLoose":"../node_modules/@babel/runtime/helpers/esm/inheritsLoose.js","react":"../node_modules/react/index.js","history":"../node_modules/history/esm/history.js","prop-types":"../node_modules/prop-types/index.js","tiny-warning":"../node_modules/tiny-warning/dist/tiny-warning.esm.js","@babel/runtime/helpers/esm/extends":"../node_modules/@babel/runtime/helpers/esm/extends.js","@babel/runtime/helpers/esm/objectWithoutPropertiesLoose":"../node_modules/@babel/runtime/helpers/esm/objectWithoutPropertiesLoose.js","tiny-invariant":"../node_modules/tiny-invariant/dist/tiny-invariant.esm.js"}],"../node_modules/history/warnAboutDeprecatedCJSRequire.js":[function(require,module,exports) {
-'use strict';
-
-var printWarning = function () {};
-
-if ("development" !== 'production') {
-  printWarning = function (format, subs) {
-    var index = 0;
-    var message = 'Warning: ' + (subs.length > 0 ? format.replace(/%s/g, function () {
-      return subs[index++];
-    }) : format);
-
-    if (typeof console !== 'undefined') {
-      console.error(message);
-    }
-
-    try {
-      // --- Welcome to debugging history ---
-      // This error was thrown as a convenience so that you can use the
-      // stack trace to find the callsite that triggered this warning.
-      throw new Error(message);
-    } catch (e) {}
-  };
-}
-
-module.exports = function (member) {
-  printWarning('Please use `require("history").%s` instead of `require("history/%s")`. ' + 'Support for the latter will be removed in the next major release.', [member, member]);
-};
-},{}],"../node_modules/history/cjs/history.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var resolvePathname = _interopDefault(require('resolve-pathname'));
-var valueEqual = _interopDefault(require('value-equal'));
-var warning = _interopDefault(require('tiny-warning'));
-var invariant = _interopDefault(require('tiny-invariant'));
-
-function _extends() {
-  _extends = Object.assign || function (target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i];
-
-      for (var key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
-          target[key] = source[key];
-        }
-      }
-    }
-
-    return target;
-  };
-
-  return _extends.apply(this, arguments);
-}
-
-function addLeadingSlash(path) {
-  return path.charAt(0) === '/' ? path : '/' + path;
-}
-function stripLeadingSlash(path) {
-  return path.charAt(0) === '/' ? path.substr(1) : path;
-}
-function hasBasename(path, prefix) {
-  return path.toLowerCase().indexOf(prefix.toLowerCase()) === 0 && '/?#'.indexOf(path.charAt(prefix.length)) !== -1;
-}
-function stripBasename(path, prefix) {
-  return hasBasename(path, prefix) ? path.substr(prefix.length) : path;
-}
-function stripTrailingSlash(path) {
-  return path.charAt(path.length - 1) === '/' ? path.slice(0, -1) : path;
-}
-function parsePath(path) {
-  var pathname = path || '/';
-  var search = '';
-  var hash = '';
-  var hashIndex = pathname.indexOf('#');
-
-  if (hashIndex !== -1) {
-    hash = pathname.substr(hashIndex);
-    pathname = pathname.substr(0, hashIndex);
-  }
-
-  var searchIndex = pathname.indexOf('?');
-
-  if (searchIndex !== -1) {
-    search = pathname.substr(searchIndex);
-    pathname = pathname.substr(0, searchIndex);
-  }
-
-  return {
-    pathname: pathname,
-    search: search === '?' ? '' : search,
-    hash: hash === '#' ? '' : hash
-  };
-}
-function createPath(location) {
-  var pathname = location.pathname,
-      search = location.search,
-      hash = location.hash;
-  var path = pathname || '/';
-  if (search && search !== '?') path += search.charAt(0) === '?' ? search : "?" + search;
-  if (hash && hash !== '#') path += hash.charAt(0) === '#' ? hash : "#" + hash;
-  return path;
-}
-
-function createLocation(path, state, key, currentLocation) {
-  var location;
-
-  if (typeof path === 'string') {
-    // Two-arg form: push(path, state)
-    location = parsePath(path);
-    location.state = state;
-  } else {
-    // One-arg form: push(location)
-    location = _extends({}, path);
-    if (location.pathname === undefined) location.pathname = '';
-
-    if (location.search) {
-      if (location.search.charAt(0) !== '?') location.search = '?' + location.search;
-    } else {
-      location.search = '';
-    }
-
-    if (location.hash) {
-      if (location.hash.charAt(0) !== '#') location.hash = '#' + location.hash;
-    } else {
-      location.hash = '';
-    }
-
-    if (state !== undefined && location.state === undefined) location.state = state;
-  }
-
-  try {
-    location.pathname = decodeURI(location.pathname);
-  } catch (e) {
-    if (e instanceof URIError) {
-      throw new URIError('Pathname "' + location.pathname + '" could not be decoded. ' + 'This is likely caused by an invalid percent-encoding.');
-    } else {
-      throw e;
-    }
-  }
-
-  if (key) location.key = key;
-
-  if (currentLocation) {
-    // Resolve incomplete/relative pathname relative to current location.
-    if (!location.pathname) {
-      location.pathname = currentLocation.pathname;
-    } else if (location.pathname.charAt(0) !== '/') {
-      location.pathname = resolvePathname(location.pathname, currentLocation.pathname);
-    }
-  } else {
-    // When there is no prior location and pathname is empty, set it to /
-    if (!location.pathname) {
-      location.pathname = '/';
-    }
-  }
-
-  return location;
-}
-function locationsAreEqual(a, b) {
-  return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.key === b.key && valueEqual(a.state, b.state);
-}
-
-function createTransitionManager() {
-  var prompt = null;
-
-  function setPrompt(nextPrompt) {
-    warning(prompt == null, 'A history supports only one prompt at a time');
-    prompt = nextPrompt;
-    return function () {
-      if (prompt === nextPrompt) prompt = null;
-    };
-  }
-
-  function confirmTransitionTo(location, action, getUserConfirmation, callback) {
-    // TODO: If another transition starts while we're still confirming
-    // the previous one, we may end up in a weird state. Figure out the
-    // best way to handle this.
-    if (prompt != null) {
-      var result = typeof prompt === 'function' ? prompt(location, action) : prompt;
-
-      if (typeof result === 'string') {
-        if (typeof getUserConfirmation === 'function') {
-          getUserConfirmation(result, callback);
-        } else {
-          warning(false, 'A history needs a getUserConfirmation function in order to use a prompt message');
-          callback(true);
-        }
-      } else {
-        // Return false from a transition hook to cancel the transition.
-        callback(result !== false);
-      }
-    } else {
-      callback(true);
-    }
-  }
-
-  var listeners = [];
-
-  function appendListener(fn) {
-    var isActive = true;
-
-    function listener() {
-      if (isActive) fn.apply(void 0, arguments);
-    }
-
-    listeners.push(listener);
-    return function () {
-      isActive = false;
-      listeners = listeners.filter(function (item) {
-        return item !== listener;
-      });
-    };
-  }
-
-  function notifyListeners() {
-    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
-    }
-
-    listeners.forEach(function (listener) {
-      return listener.apply(void 0, args);
-    });
-  }
-
-  return {
-    setPrompt: setPrompt,
-    confirmTransitionTo: confirmTransitionTo,
-    appendListener: appendListener,
-    notifyListeners: notifyListeners
-  };
-}
-
-var canUseDOM = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
-function getConfirmation(message, callback) {
-  callback(window.confirm(message)); // eslint-disable-line no-alert
-}
-/**
- * Returns true if the HTML5 history API is supported. Taken from Modernizr.
- *
- * https://github.com/Modernizr/Modernizr/blob/master/LICENSE
- * https://github.com/Modernizr/Modernizr/blob/master/feature-detects/history.js
- * changed to avoid false negatives for Windows Phones: https://github.com/reactjs/react-router/issues/586
- */
-
-function supportsHistory() {
-  var ua = window.navigator.userAgent;
-  if ((ua.indexOf('Android 2.') !== -1 || ua.indexOf('Android 4.0') !== -1) && ua.indexOf('Mobile Safari') !== -1 && ua.indexOf('Chrome') === -1 && ua.indexOf('Windows Phone') === -1) return false;
-  return window.history && 'pushState' in window.history;
-}
-/**
- * Returns true if browser fires popstate on hash change.
- * IE10 and IE11 do not.
- */
-
-function supportsPopStateOnHashChange() {
-  return window.navigator.userAgent.indexOf('Trident') === -1;
-}
-/**
- * Returns false if using go(n) with hash history causes a full page reload.
- */
-
-function supportsGoWithoutReloadUsingHash() {
-  return window.navigator.userAgent.indexOf('Firefox') === -1;
-}
-/**
- * Returns true if a given popstate event is an extraneous WebKit event.
- * Accounts for the fact that Chrome on iOS fires real popstate events
- * containing undefined state when pressing the back button.
- */
-
-function isExtraneousPopstateEvent(event) {
-  return event.state === undefined && navigator.userAgent.indexOf('CriOS') === -1;
-}
-
-var PopStateEvent = 'popstate';
-var HashChangeEvent = 'hashchange';
-
-function getHistoryState() {
-  try {
-    return window.history.state || {};
-  } catch (e) {
-    // IE 11 sometimes throws when accessing window.history.state
-    // See https://github.com/ReactTraining/history/pull/289
-    return {};
-  }
-}
-/**
- * Creates a history object that uses the HTML5 history API including
- * pushState, replaceState, and the popstate event.
- */
-
-
-function createBrowserHistory(props) {
-  if (props === void 0) {
-    props = {};
-  }
-
-  !canUseDOM ? invariant(false, 'Browser history needs a DOM') : void 0;
-  var globalHistory = window.history;
-  var canUseHistory = supportsHistory();
-  var needsHashChangeListener = !supportsPopStateOnHashChange();
-  var _props = props,
-      _props$forceRefresh = _props.forceRefresh,
-      forceRefresh = _props$forceRefresh === void 0 ? false : _props$forceRefresh,
-      _props$getUserConfirm = _props.getUserConfirmation,
-      getUserConfirmation = _props$getUserConfirm === void 0 ? getConfirmation : _props$getUserConfirm,
-      _props$keyLength = _props.keyLength,
-      keyLength = _props$keyLength === void 0 ? 6 : _props$keyLength;
-  var basename = props.basename ? stripTrailingSlash(addLeadingSlash(props.basename)) : '';
-
-  function getDOMLocation(historyState) {
-    var _ref = historyState || {},
-        key = _ref.key,
-        state = _ref.state;
-
-    var _window$location = window.location,
-        pathname = _window$location.pathname,
-        search = _window$location.search,
-        hash = _window$location.hash;
-    var path = pathname + search + hash;
-    warning(!basename || hasBasename(path, basename), 'You are attempting to use a basename on a page whose URL path does not begin ' + 'with the basename. Expected path "' + path + '" to begin with "' + basename + '".');
-    if (basename) path = stripBasename(path, basename);
-    return createLocation(path, state, key);
-  }
-
-  function createKey() {
-    return Math.random().toString(36).substr(2, keyLength);
-  }
-
-  var transitionManager = createTransitionManager();
-
-  function setState(nextState) {
-    _extends(history, nextState);
-
-    history.length = globalHistory.length;
-    transitionManager.notifyListeners(history.location, history.action);
-  }
-
-  function handlePopState(event) {
-    // Ignore extraneous popstate events in WebKit.
-    if (isExtraneousPopstateEvent(event)) return;
-    handlePop(getDOMLocation(event.state));
-  }
-
-  function handleHashChange() {
-    handlePop(getDOMLocation(getHistoryState()));
-  }
-
-  var forceNextPop = false;
-
-  function handlePop(location) {
-    if (forceNextPop) {
-      forceNextPop = false;
-      setState();
-    } else {
-      var action = 'POP';
-      transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-        if (ok) {
-          setState({
-            action: action,
-            location: location
-          });
-        } else {
-          revertPop(location);
-        }
-      });
-    }
-  }
-
-  function revertPop(fromLocation) {
-    var toLocation = history.location; // TODO: We could probably make this more reliable by
-    // keeping a list of keys we've seen in sessionStorage.
-    // Instead, we just default to 0 for keys we don't know.
-
-    var toIndex = allKeys.indexOf(toLocation.key);
-    if (toIndex === -1) toIndex = 0;
-    var fromIndex = allKeys.indexOf(fromLocation.key);
-    if (fromIndex === -1) fromIndex = 0;
-    var delta = toIndex - fromIndex;
-
-    if (delta) {
-      forceNextPop = true;
-      go(delta);
-    }
-  }
-
-  var initialLocation = getDOMLocation(getHistoryState());
-  var allKeys = [initialLocation.key]; // Public interface
-
-  function createHref(location) {
-    return basename + createPath(location);
-  }
-
-  function push(path, state) {
-    warning(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to push when the 1st ' + 'argument is a location-like object that already has state; it is ignored');
-    var action = 'PUSH';
-    var location = createLocation(path, state, createKey(), history.location);
-    transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-      if (!ok) return;
-      var href = createHref(location);
-      var key = location.key,
-          state = location.state;
-
-      if (canUseHistory) {
-        globalHistory.pushState({
-          key: key,
-          state: state
-        }, null, href);
-
-        if (forceRefresh) {
-          window.location.href = href;
-        } else {
-          var prevIndex = allKeys.indexOf(history.location.key);
-          var nextKeys = allKeys.slice(0, prevIndex + 1);
-          nextKeys.push(location.key);
-          allKeys = nextKeys;
-          setState({
-            action: action,
-            location: location
-          });
-        }
-      } else {
-        warning(state === undefined, 'Browser history cannot push state in browsers that do not support HTML5 history');
-        window.location.href = href;
-      }
-    });
-  }
-
-  function replace(path, state) {
-    warning(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to replace when the 1st ' + 'argument is a location-like object that already has state; it is ignored');
-    var action = 'REPLACE';
-    var location = createLocation(path, state, createKey(), history.location);
-    transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-      if (!ok) return;
-      var href = createHref(location);
-      var key = location.key,
-          state = location.state;
-
-      if (canUseHistory) {
-        globalHistory.replaceState({
-          key: key,
-          state: state
-        }, null, href);
-
-        if (forceRefresh) {
-          window.location.replace(href);
-        } else {
-          var prevIndex = allKeys.indexOf(history.location.key);
-          if (prevIndex !== -1) allKeys[prevIndex] = location.key;
-          setState({
-            action: action,
-            location: location
-          });
-        }
-      } else {
-        warning(state === undefined, 'Browser history cannot replace state in browsers that do not support HTML5 history');
-        window.location.replace(href);
-      }
-    });
-  }
-
-  function go(n) {
-    globalHistory.go(n);
-  }
-
-  function goBack() {
-    go(-1);
-  }
-
-  function goForward() {
-    go(1);
-  }
-
-  var listenerCount = 0;
-
-  function checkDOMListeners(delta) {
-    listenerCount += delta;
-
-    if (listenerCount === 1 && delta === 1) {
-      window.addEventListener(PopStateEvent, handlePopState);
-      if (needsHashChangeListener) window.addEventListener(HashChangeEvent, handleHashChange);
-    } else if (listenerCount === 0) {
-      window.removeEventListener(PopStateEvent, handlePopState);
-      if (needsHashChangeListener) window.removeEventListener(HashChangeEvent, handleHashChange);
-    }
-  }
-
-  var isBlocked = false;
-
-  function block(prompt) {
-    if (prompt === void 0) {
-      prompt = false;
-    }
-
-    var unblock = transitionManager.setPrompt(prompt);
-
-    if (!isBlocked) {
-      checkDOMListeners(1);
-      isBlocked = true;
-    }
-
-    return function () {
-      if (isBlocked) {
-        isBlocked = false;
-        checkDOMListeners(-1);
-      }
-
-      return unblock();
-    };
-  }
-
-  function listen(listener) {
-    var unlisten = transitionManager.appendListener(listener);
-    checkDOMListeners(1);
-    return function () {
-      checkDOMListeners(-1);
-      unlisten();
-    };
-  }
-
-  var history = {
-    length: globalHistory.length,
-    action: 'POP',
-    location: initialLocation,
-    createHref: createHref,
-    push: push,
-    replace: replace,
-    go: go,
-    goBack: goBack,
-    goForward: goForward,
-    block: block,
-    listen: listen
-  };
-  return history;
-}
-
-var HashChangeEvent$1 = 'hashchange';
-var HashPathCoders = {
-  hashbang: {
-    encodePath: function encodePath(path) {
-      return path.charAt(0) === '!' ? path : '!/' + stripLeadingSlash(path);
-    },
-    decodePath: function decodePath(path) {
-      return path.charAt(0) === '!' ? path.substr(1) : path;
-    }
-  },
-  noslash: {
-    encodePath: stripLeadingSlash,
-    decodePath: addLeadingSlash
-  },
-  slash: {
-    encodePath: addLeadingSlash,
-    decodePath: addLeadingSlash
-  }
-};
-
-function stripHash(url) {
-  var hashIndex = url.indexOf('#');
-  return hashIndex === -1 ? url : url.slice(0, hashIndex);
-}
-
-function getHashPath() {
-  // We can't use window.location.hash here because it's not
-  // consistent across browsers - Firefox will pre-decode it!
-  var href = window.location.href;
-  var hashIndex = href.indexOf('#');
-  return hashIndex === -1 ? '' : href.substring(hashIndex + 1);
-}
-
-function pushHashPath(path) {
-  window.location.hash = path;
-}
-
-function replaceHashPath(path) {
-  window.location.replace(stripHash(window.location.href) + '#' + path);
-}
-
-function createHashHistory(props) {
-  if (props === void 0) {
-    props = {};
-  }
-
-  !canUseDOM ? invariant(false, 'Hash history needs a DOM') : void 0;
-  var globalHistory = window.history;
-  var canGoWithoutReload = supportsGoWithoutReloadUsingHash();
-  var _props = props,
-      _props$getUserConfirm = _props.getUserConfirmation,
-      getUserConfirmation = _props$getUserConfirm === void 0 ? getConfirmation : _props$getUserConfirm,
-      _props$hashType = _props.hashType,
-      hashType = _props$hashType === void 0 ? 'slash' : _props$hashType;
-  var basename = props.basename ? stripTrailingSlash(addLeadingSlash(props.basename)) : '';
-  var _HashPathCoders$hashT = HashPathCoders[hashType],
-      encodePath = _HashPathCoders$hashT.encodePath,
-      decodePath = _HashPathCoders$hashT.decodePath;
-
-  function getDOMLocation() {
-    var path = decodePath(getHashPath());
-    warning(!basename || hasBasename(path, basename), 'You are attempting to use a basename on a page whose URL path does not begin ' + 'with the basename. Expected path "' + path + '" to begin with "' + basename + '".');
-    if (basename) path = stripBasename(path, basename);
-    return createLocation(path);
-  }
-
-  var transitionManager = createTransitionManager();
-
-  function setState(nextState) {
-    _extends(history, nextState);
-
-    history.length = globalHistory.length;
-    transitionManager.notifyListeners(history.location, history.action);
-  }
-
-  var forceNextPop = false;
-  var ignorePath = null;
-
-  function locationsAreEqual$$1(a, b) {
-    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
-  }
-
-  function handleHashChange() {
-    var path = getHashPath();
-    var encodedPath = encodePath(path);
-
-    if (path !== encodedPath) {
-      // Ensure we always have a properly-encoded hash.
-      replaceHashPath(encodedPath);
-    } else {
-      var location = getDOMLocation();
-      var prevLocation = history.location;
-      if (!forceNextPop && locationsAreEqual$$1(prevLocation, location)) return; // A hashchange doesn't always == location change.
-
-      if (ignorePath === createPath(location)) return; // Ignore this change; we already setState in push/replace.
-
-      ignorePath = null;
-      handlePop(location);
-    }
-  }
-
-  function handlePop(location) {
-    if (forceNextPop) {
-      forceNextPop = false;
-      setState();
-    } else {
-      var action = 'POP';
-      transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-        if (ok) {
-          setState({
-            action: action,
-            location: location
-          });
-        } else {
-          revertPop(location);
-        }
-      });
-    }
-  }
-
-  function revertPop(fromLocation) {
-    var toLocation = history.location; // TODO: We could probably make this more reliable by
-    // keeping a list of paths we've seen in sessionStorage.
-    // Instead, we just default to 0 for paths we don't know.
-
-    var toIndex = allPaths.lastIndexOf(createPath(toLocation));
-    if (toIndex === -1) toIndex = 0;
-    var fromIndex = allPaths.lastIndexOf(createPath(fromLocation));
-    if (fromIndex === -1) fromIndex = 0;
-    var delta = toIndex - fromIndex;
-
-    if (delta) {
-      forceNextPop = true;
-      go(delta);
-    }
-  } // Ensure the hash is encoded properly before doing anything else.
-
-
-  var path = getHashPath();
-  var encodedPath = encodePath(path);
-  if (path !== encodedPath) replaceHashPath(encodedPath);
-  var initialLocation = getDOMLocation();
-  var allPaths = [createPath(initialLocation)]; // Public interface
-
-  function createHref(location) {
-    var baseTag = document.querySelector('base');
-    var href = '';
-
-    if (baseTag && baseTag.getAttribute('href')) {
-      href = stripHash(window.location.href);
-    }
-
-    return href + '#' + encodePath(basename + createPath(location));
-  }
-
-  function push(path, state) {
-    warning(state === undefined, 'Hash history cannot push state; it is ignored');
-    var action = 'PUSH';
-    var location = createLocation(path, undefined, undefined, history.location);
-    transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-      if (!ok) return;
-      var path = createPath(location);
-      var encodedPath = encodePath(basename + path);
-      var hashChanged = getHashPath() !== encodedPath;
-
-      if (hashChanged) {
-        // We cannot tell if a hashchange was caused by a PUSH, so we'd
-        // rather setState here and ignore the hashchange. The caveat here
-        // is that other hash histories in the page will consider it a POP.
-        ignorePath = path;
-        pushHashPath(encodedPath);
-        var prevIndex = allPaths.lastIndexOf(createPath(history.location));
-        var nextPaths = allPaths.slice(0, prevIndex + 1);
-        nextPaths.push(path);
-        allPaths = nextPaths;
-        setState({
-          action: action,
-          location: location
-        });
-      } else {
-        warning(false, 'Hash history cannot PUSH the same path; a new entry will not be added to the history stack');
-        setState();
-      }
-    });
-  }
-
-  function replace(path, state) {
-    warning(state === undefined, 'Hash history cannot replace state; it is ignored');
-    var action = 'REPLACE';
-    var location = createLocation(path, undefined, undefined, history.location);
-    transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-      if (!ok) return;
-      var path = createPath(location);
-      var encodedPath = encodePath(basename + path);
-      var hashChanged = getHashPath() !== encodedPath;
-
-      if (hashChanged) {
-        // We cannot tell if a hashchange was caused by a REPLACE, so we'd
-        // rather setState here and ignore the hashchange. The caveat here
-        // is that other hash histories in the page will consider it a POP.
-        ignorePath = path;
-        replaceHashPath(encodedPath);
-      }
-
-      var prevIndex = allPaths.indexOf(createPath(history.location));
-      if (prevIndex !== -1) allPaths[prevIndex] = path;
-      setState({
-        action: action,
-        location: location
-      });
-    });
-  }
-
-  function go(n) {
-    warning(canGoWithoutReload, 'Hash history go(n) causes a full page reload in this browser');
-    globalHistory.go(n);
-  }
-
-  function goBack() {
-    go(-1);
-  }
-
-  function goForward() {
-    go(1);
-  }
-
-  var listenerCount = 0;
-
-  function checkDOMListeners(delta) {
-    listenerCount += delta;
-
-    if (listenerCount === 1 && delta === 1) {
-      window.addEventListener(HashChangeEvent$1, handleHashChange);
-    } else if (listenerCount === 0) {
-      window.removeEventListener(HashChangeEvent$1, handleHashChange);
-    }
-  }
-
-  var isBlocked = false;
-
-  function block(prompt) {
-    if (prompt === void 0) {
-      prompt = false;
-    }
-
-    var unblock = transitionManager.setPrompt(prompt);
-
-    if (!isBlocked) {
-      checkDOMListeners(1);
-      isBlocked = true;
-    }
-
-    return function () {
-      if (isBlocked) {
-        isBlocked = false;
-        checkDOMListeners(-1);
-      }
-
-      return unblock();
-    };
-  }
-
-  function listen(listener) {
-    var unlisten = transitionManager.appendListener(listener);
-    checkDOMListeners(1);
-    return function () {
-      checkDOMListeners(-1);
-      unlisten();
-    };
-  }
-
-  var history = {
-    length: globalHistory.length,
-    action: 'POP',
-    location: initialLocation,
-    createHref: createHref,
-    push: push,
-    replace: replace,
-    go: go,
-    goBack: goBack,
-    goForward: goForward,
-    block: block,
-    listen: listen
-  };
-  return history;
-}
-
-function clamp(n, lowerBound, upperBound) {
-  return Math.min(Math.max(n, lowerBound), upperBound);
-}
-/**
- * Creates a history object that stores locations in memory.
- */
-
-
-function createMemoryHistory(props) {
-  if (props === void 0) {
-    props = {};
-  }
-
-  var _props = props,
-      getUserConfirmation = _props.getUserConfirmation,
-      _props$initialEntries = _props.initialEntries,
-      initialEntries = _props$initialEntries === void 0 ? ['/'] : _props$initialEntries,
-      _props$initialIndex = _props.initialIndex,
-      initialIndex = _props$initialIndex === void 0 ? 0 : _props$initialIndex,
-      _props$keyLength = _props.keyLength,
-      keyLength = _props$keyLength === void 0 ? 6 : _props$keyLength;
-  var transitionManager = createTransitionManager();
-
-  function setState(nextState) {
-    _extends(history, nextState);
-
-    history.length = history.entries.length;
-    transitionManager.notifyListeners(history.location, history.action);
-  }
-
-  function createKey() {
-    return Math.random().toString(36).substr(2, keyLength);
-  }
-
-  var index = clamp(initialIndex, 0, initialEntries.length - 1);
-  var entries = initialEntries.map(function (entry) {
-    return typeof entry === 'string' ? createLocation(entry, undefined, createKey()) : createLocation(entry, undefined, entry.key || createKey());
-  }); // Public interface
-
-  var createHref = createPath;
-
-  function push(path, state) {
-    warning(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to push when the 1st ' + 'argument is a location-like object that already has state; it is ignored');
-    var action = 'PUSH';
-    var location = createLocation(path, state, createKey(), history.location);
-    transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-      if (!ok) return;
-      var prevIndex = history.index;
-      var nextIndex = prevIndex + 1;
-      var nextEntries = history.entries.slice(0);
-
-      if (nextEntries.length > nextIndex) {
-        nextEntries.splice(nextIndex, nextEntries.length - nextIndex, location);
-      } else {
-        nextEntries.push(location);
-      }
-
-      setState({
-        action: action,
-        location: location,
-        index: nextIndex,
-        entries: nextEntries
-      });
-    });
-  }
-
-  function replace(path, state) {
-    warning(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to replace when the 1st ' + 'argument is a location-like object that already has state; it is ignored');
-    var action = 'REPLACE';
-    var location = createLocation(path, state, createKey(), history.location);
-    transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-      if (!ok) return;
-      history.entries[history.index] = location;
-      setState({
-        action: action,
-        location: location
-      });
-    });
-  }
-
-  function go(n) {
-    var nextIndex = clamp(history.index + n, 0, history.entries.length - 1);
-    var action = 'POP';
-    var location = history.entries[nextIndex];
-    transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-      if (ok) {
-        setState({
-          action: action,
-          location: location,
-          index: nextIndex
-        });
-      } else {
-        // Mimic the behavior of DOM histories by
-        // causing a render after a cancelled POP.
-        setState();
-      }
-    });
-  }
-
-  function goBack() {
-    go(-1);
-  }
-
-  function goForward() {
-    go(1);
-  }
-
-  function canGo(n) {
-    var nextIndex = history.index + n;
-    return nextIndex >= 0 && nextIndex < history.entries.length;
-  }
-
-  function block(prompt) {
-    if (prompt === void 0) {
-      prompt = false;
-    }
-
-    return transitionManager.setPrompt(prompt);
-  }
-
-  function listen(listener) {
-    return transitionManager.appendListener(listener);
-  }
-
-  var history = {
-    length: entries.length,
-    action: 'POP',
-    location: entries[index],
-    index: index,
-    entries: entries,
-    createHref: createHref,
-    push: push,
-    replace: replace,
-    go: go,
-    goBack: goBack,
-    goForward: goForward,
-    canGo: canGo,
-    block: block,
-    listen: listen
-  };
-  return history;
-}
-
-exports.createBrowserHistory = createBrowserHistory;
-exports.createHashHistory = createHashHistory;
-exports.createMemoryHistory = createMemoryHistory;
-exports.createLocation = createLocation;
-exports.locationsAreEqual = locationsAreEqual;
-exports.parsePath = parsePath;
-exports.createPath = createPath;
-
-},{"resolve-pathname":"../node_modules/resolve-pathname/esm/resolve-pathname.js","value-equal":"../node_modules/value-equal/esm/value-equal.js","tiny-warning":"../node_modules/tiny-warning/dist/tiny-warning.esm.js","tiny-invariant":"../node_modules/tiny-invariant/dist/tiny-invariant.esm.js"}],"../node_modules/history/index.js":[function(require,module,exports) {
-'use strict';
-
-if ("development" === 'production') {
-  module.exports = require('./cjs/history.min.js');
-} else {
-  module.exports = require('./cjs/history.js');
-}
-},{"./cjs/history.js":"../node_modules/history/cjs/history.js"}],"../node_modules/history/createBrowserHistory.js":[function(require,module,exports) {
-'use strict';
-require('./warnAboutDeprecatedCJSRequire.js')('createBrowserHistory');
-module.exports = require('./index.js').createBrowserHistory;
-
-},{"./warnAboutDeprecatedCJSRequire.js":"../node_modules/history/warnAboutDeprecatedCJSRequire.js","./index.js":"../node_modules/history/index.js"}],"assets/project1.png":[function(require,module,exports) {
+},{"react-router":"../node_modules/react-router/esm/react-router.js","@babel/runtime/helpers/esm/inheritsLoose":"../node_modules/@babel/runtime/helpers/esm/inheritsLoose.js","react":"../node_modules/react/index.js","history":"../node_modules/history/esm/history.js","prop-types":"../node_modules/prop-types/index.js","tiny-warning":"../node_modules/tiny-warning/dist/tiny-warning.esm.js","@babel/runtime/helpers/esm/extends":"../node_modules/@babel/runtime/helpers/esm/extends.js","@babel/runtime/helpers/esm/objectWithoutPropertiesLoose":"../node_modules/@babel/runtime/helpers/esm/objectWithoutPropertiesLoose.js","tiny-invariant":"../node_modules/tiny-invariant/dist/tiny-invariant.esm.js"}],"assets/project1.png":[function(require,module,exports) {
 module.exports = "/project1.0e13da1c.png";
 },{}],"assets/project2.png":[function(require,module,exports) {
 module.exports = "/project2.d48872d8.png";
@@ -37900,312 +36909,7 @@ var reloadCSS = require('_css_loader');
 
 module.hot.dispose(reloadCSS);
 module.hot.accept(reloadCSS);
-},{"./assets\\roboto-condensed.light.ttf":[["roboto-condensed.light.6709adf4.ttf","assets/roboto-condensed.light.ttf"],"assets/roboto-condensed.light.ttf"],"./assets\\economica-bold.ttf":[["economica-bold.12a9e27d.ttf","assets/economica-bold.ttf"],"assets/economica-bold.ttf"],"_css_loader":"../node_modules/parcel-bundler/src/builtins/css-loader.js"}],"../node_modules/path-browserify/index.js":[function(require,module,exports) {
-var process = require("process");
-// .dirname, .basename, and .extname methods are extracted from Node.js v8.11.1,
-// backported and transplited with Babel, with backwards-compat fixes
-
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-// resolves . and .. elements in a path array with directory names there
-// must be no slashes, empty elements, or device names (c:\) in the array
-// (so also no leading and trailing slashes - it does not distinguish
-// relative and absolute paths)
-function normalizeArray(parts, allowAboveRoot) {
-  // if the path tries to go above the root, `up` ends up > 0
-  var up = 0;
-  for (var i = parts.length - 1; i >= 0; i--) {
-    var last = parts[i];
-    if (last === '.') {
-      parts.splice(i, 1);
-    } else if (last === '..') {
-      parts.splice(i, 1);
-      up++;
-    } else if (up) {
-      parts.splice(i, 1);
-      up--;
-    }
-  }
-
-  // if the path is allowed to go above the root, restore leading ..s
-  if (allowAboveRoot) {
-    for (; up--; up) {
-      parts.unshift('..');
-    }
-  }
-
-  return parts;
-}
-
-// path.resolve([from ...], to)
-// posix version
-exports.resolve = function() {
-  var resolvedPath = '',
-      resolvedAbsolute = false;
-
-  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
-    var path = (i >= 0) ? arguments[i] : process.cwd();
-
-    // Skip empty and invalid entries
-    if (typeof path !== 'string') {
-      throw new TypeError('Arguments to path.resolve must be strings');
-    } else if (!path) {
-      continue;
-    }
-
-    resolvedPath = path + '/' + resolvedPath;
-    resolvedAbsolute = path.charAt(0) === '/';
-  }
-
-  // At this point the path should be resolved to a full absolute path, but
-  // handle relative paths to be safe (might happen when process.cwd() fails)
-
-  // Normalize the path
-  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
-    return !!p;
-  }), !resolvedAbsolute).join('/');
-
-  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
-};
-
-// path.normalize(path)
-// posix version
-exports.normalize = function(path) {
-  var isAbsolute = exports.isAbsolute(path),
-      trailingSlash = substr(path, -1) === '/';
-
-  // Normalize the path
-  path = normalizeArray(filter(path.split('/'), function(p) {
-    return !!p;
-  }), !isAbsolute).join('/');
-
-  if (!path && !isAbsolute) {
-    path = '.';
-  }
-  if (path && trailingSlash) {
-    path += '/';
-  }
-
-  return (isAbsolute ? '/' : '') + path;
-};
-
-// posix version
-exports.isAbsolute = function(path) {
-  return path.charAt(0) === '/';
-};
-
-// posix version
-exports.join = function() {
-  var paths = Array.prototype.slice.call(arguments, 0);
-  return exports.normalize(filter(paths, function(p, index) {
-    if (typeof p !== 'string') {
-      throw new TypeError('Arguments to path.join must be strings');
-    }
-    return p;
-  }).join('/'));
-};
-
-
-// path.relative(from, to)
-// posix version
-exports.relative = function(from, to) {
-  from = exports.resolve(from).substr(1);
-  to = exports.resolve(to).substr(1);
-
-  function trim(arr) {
-    var start = 0;
-    for (; start < arr.length; start++) {
-      if (arr[start] !== '') break;
-    }
-
-    var end = arr.length - 1;
-    for (; end >= 0; end--) {
-      if (arr[end] !== '') break;
-    }
-
-    if (start > end) return [];
-    return arr.slice(start, end - start + 1);
-  }
-
-  var fromParts = trim(from.split('/'));
-  var toParts = trim(to.split('/'));
-
-  var length = Math.min(fromParts.length, toParts.length);
-  var samePartsLength = length;
-  for (var i = 0; i < length; i++) {
-    if (fromParts[i] !== toParts[i]) {
-      samePartsLength = i;
-      break;
-    }
-  }
-
-  var outputParts = [];
-  for (var i = samePartsLength; i < fromParts.length; i++) {
-    outputParts.push('..');
-  }
-
-  outputParts = outputParts.concat(toParts.slice(samePartsLength));
-
-  return outputParts.join('/');
-};
-
-exports.sep = '/';
-exports.delimiter = ':';
-
-exports.dirname = function (path) {
-  if (typeof path !== 'string') path = path + '';
-  if (path.length === 0) return '.';
-  var code = path.charCodeAt(0);
-  var hasRoot = code === 47 /*/*/;
-  var end = -1;
-  var matchedSlash = true;
-  for (var i = path.length - 1; i >= 1; --i) {
-    code = path.charCodeAt(i);
-    if (code === 47 /*/*/) {
-        if (!matchedSlash) {
-          end = i;
-          break;
-        }
-      } else {
-      // We saw the first non-path separator
-      matchedSlash = false;
-    }
-  }
-
-  if (end === -1) return hasRoot ? '/' : '.';
-  if (hasRoot && end === 1) {
-    // return '//';
-    // Backwards-compat fix:
-    return '/';
-  }
-  return path.slice(0, end);
-};
-
-function basename(path) {
-  if (typeof path !== 'string') path = path + '';
-
-  var start = 0;
-  var end = -1;
-  var matchedSlash = true;
-  var i;
-
-  for (i = path.length - 1; i >= 0; --i) {
-    if (path.charCodeAt(i) === 47 /*/*/) {
-        // If we reached a path separator that was not part of a set of path
-        // separators at the end of the string, stop now
-        if (!matchedSlash) {
-          start = i + 1;
-          break;
-        }
-      } else if (end === -1) {
-      // We saw the first non-path separator, mark this as the end of our
-      // path component
-      matchedSlash = false;
-      end = i + 1;
-    }
-  }
-
-  if (end === -1) return '';
-  return path.slice(start, end);
-}
-
-// Uses a mixed approach for backwards-compatibility, as ext behavior changed
-// in new Node.js versions, so only basename() above is backported here
-exports.basename = function (path, ext) {
-  var f = basename(path);
-  if (ext && f.substr(-1 * ext.length) === ext) {
-    f = f.substr(0, f.length - ext.length);
-  }
-  return f;
-};
-
-exports.extname = function (path) {
-  if (typeof path !== 'string') path = path + '';
-  var startDot = -1;
-  var startPart = 0;
-  var end = -1;
-  var matchedSlash = true;
-  // Track the state of characters (if any) we see before our first dot and
-  // after any path separator we find
-  var preDotState = 0;
-  for (var i = path.length - 1; i >= 0; --i) {
-    var code = path.charCodeAt(i);
-    if (code === 47 /*/*/) {
-        // If we reached a path separator that was not part of a set of path
-        // separators at the end of the string, stop now
-        if (!matchedSlash) {
-          startPart = i + 1;
-          break;
-        }
-        continue;
-      }
-    if (end === -1) {
-      // We saw the first non-path separator, mark this as the end of our
-      // extension
-      matchedSlash = false;
-      end = i + 1;
-    }
-    if (code === 46 /*.*/) {
-        // If this is our first dot, mark it as the start of our extension
-        if (startDot === -1)
-          startDot = i;
-        else if (preDotState !== 1)
-          preDotState = 1;
-    } else if (startDot !== -1) {
-      // We saw a non-dot and non-path separator before our dot, so we should
-      // have a good chance at having a non-empty extension
-      preDotState = -1;
-    }
-  }
-
-  if (startDot === -1 || end === -1 ||
-      // We saw a non-dot character immediately before the dot
-      preDotState === 0 ||
-      // The (right-most) trimmed path component is exactly '..'
-      preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
-    return '';
-  }
-  return path.slice(startDot, end);
-};
-
-function filter (xs, f) {
-    if (xs.filter) return xs.filter(f);
-    var res = [];
-    for (var i = 0; i < xs.length; i++) {
-        if (f(xs[i], i, xs)) res.push(xs[i]);
-    }
-    return res;
-}
-
-// String.prototype.substr - negative index don't work in IE8
-var substr = 'ab'.substr(-1) === 'b'
-    ? function (str, start, len) { return str.substr(start, len) }
-    : function (str, start, len) {
-        if (start < 0) start = str.length + start;
-        return str.substr(start, len);
-    }
-;
-
-},{"process":"../node_modules/process/browser.js"}],"components/Jokes.js":[function(require,module,exports) {
+},{"./assets\\roboto-condensed.light.ttf":[["roboto-condensed.light.6709adf4.ttf","assets/roboto-condensed.light.ttf"],"assets/roboto-condensed.light.ttf"],"./assets\\economica-bold.ttf":[["economica-bold.12a9e27d.ttf","assets/economica-bold.ttf"],"assets/economica-bold.ttf"],"_css_loader":"../node_modules/parcel-bundler/src/builtins/css-loader.js"}],"components/Jokes.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -38323,10 +37027,415 @@ function (_Component) {
 
 var _default = Jokes;
 exports.default = _default;
-},{"react":"../node_modules/react/index.js"}],"../node_modules/react-history/index.js":[function(require,module,exports) {
-var define;
-!function(t,e){"object"==typeof exports&&"object"==typeof module?module.exports=e():"function"==typeof define&&define.amd?define([],e):"object"==typeof exports?exports.ReactHistory=e():t.ReactHistory=e()}(this,function(){return function(t){function e(n){if(o[n])return o[n].exports;var r=o[n]={exports:{},id:n,loaded:!1};return t[n].call(r.exports,r,r.exports,e),r.loaded=!0,r.exports}var o={};return e.m=t,e.c=o,e.p="",e(0)}([function(t,e){"use strict";function o(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}function n(t,e){if("function"!=typeof e&&null!==e)throw new TypeError("Super expression must either be null or a function, not "+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}Object.defineProperty(e,"__esModule",{value:!0});var r=function(){function t(t,e){for(var o=0;o<e.length;o++){var n=e[o];n.enumerable=n.enumerable||!1,n.configurable=!0,"value"in n&&(n.writable=!0),Object.defineProperty(t,n.key,n)}}return function(e,o,n){return o&&t(e.prototype,o),n&&t(e,n),e}}(),i=function(t,e,o){for(var n=!0;n;){var r=t,i=e,c=o;u=p=a=void 0,n=!1,null===r&&(r=Function.prototype);var u=Object.getOwnPropertyDescriptor(r,i);if(void 0!==u){if("value"in u)return u.value;var a=u.get;return void 0===a?void 0:a.call(c)}var p=Object.getPrototypeOf(r);if(null===p)return void 0;t=p,e=i,o=c,n=!0}},c={};e["default"]=function(t){return function(t){function e(t){var n=this;if(o(this,e),i(Object.getPrototypeOf(e.prototype),"constructor",this).call(this,t),this.state=this.state?this.state:{},this.hash=location.hash,c.hasOwnProperty(this.hash)){var r=c[this.hash];for(var u in r)r.hasOwnProperty(u)&&(this.state[u]=r[u]);this.componentWillMount=function(){i(Object.getPrototypeOf(e.prototype),"componentWillMount",n).call(n)},this.componentDidMount=function(){i(Object.getPrototypeOf(e.prototype),"componentDidMount",n).call(n)}}}return n(e,t),r(e,[{key:"componentWillUnmount",value:function(){c[this.hash]=this.state,i(Object.getPrototypeOf(e.prototype),"componentWillUnmount",this).call(this)}}]),e}(t)},t.exports=e["default"]}])});
-},{}],"components/Header.js":[function(require,module,exports) {
+},{"react":"../node_modules/react/index.js"}],"projects/music-app/components/Search.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _react = _interopRequireWildcard(require("react"));
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; if (obj != null) { var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var Search =
+/*#__PURE__*/
+function (_Component) {
+  _inherits(Search, _Component);
+
+  function Search() {
+    var _getPrototypeOf2;
+
+    var _this;
+
+    _classCallCheck(this, Search);
+
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(Search)).call.apply(_getPrototypeOf2, [this].concat(args)));
+
+    _defineProperty(_assertThisInitialized(_this), "state", {
+      artistQuery: ''
+    });
+
+    _defineProperty(_assertThisInitialized(_this), "updateArtistQuery", function (event) {
+      _this.setState({
+        artistQuery: event.target.value
+      });
+    });
+
+    _defineProperty(_assertThisInitialized(_this), "handleKeyPress", function (event) {
+      if (event.key === 'Enter') {
+        _this.searchArtist();
+      }
+    });
+
+    _defineProperty(_assertThisInitialized(_this), "searchArtist", function () {
+      _this.props.searchArtist(_this.state.artistQuery);
+    });
+
+    return _this;
+  }
+
+  _createClass(Search, [{
+    key: "render",
+    value: function render() {
+      return _react.default.createElement("div", null, _react.default.createElement("input", {
+        onChange: this.updateArtistQuery,
+        onKeyPress: this.handleKeyPress,
+        placeholder: "Serach for an Artist"
+      }), _react.default.createElement("button", {
+        onClick: this.searchArtist
+      }, "Search"));
+    }
+  }]);
+
+  return Search;
+}(_react.Component);
+
+var _default = Search;
+exports.default = _default;
+},{"react":"../node_modules/react/index.js"}],"projects/music-app/components/Artist.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _react = _interopRequireDefault(require("react"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var Artist = function Artist(_ref) {
+  var artist = _ref.artist;
+  if (!artist) return null;
+  var images = artist.images,
+      name = artist.name,
+      followers = artist.followers,
+      genres = artist.genres;
+  return _react.default.createElement("div", null, _react.default.createElement("h3", null, name), _react.default.createElement("p", null, followers.total, " followers"), _react.default.createElement("p", null, genres.join(',')), _react.default.createElement("img", {
+    src: images[0] && images[0].url,
+    alt: "artist-profile",
+    style: {
+      width: 200,
+      height: 200,
+      borderRadius: 100,
+      objectFit: 'cover'
+    }
+  }));
+};
+
+var _default = Artist;
+exports.default = _default;
+},{"react":"../node_modules/react/index.js"}],"projects/music-app/components/Tracks.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _react = _interopRequireWildcard(require("react"));
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; if (obj != null) { var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var Tracks =
+/*#__PURE__*/
+function (_Component) {
+  _inherits(Tracks, _Component);
+
+  function Tracks() {
+    var _getPrototypeOf2;
+
+    var _this;
+
+    _classCallCheck(this, Tracks);
+
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(Tracks)).call.apply(_getPrototypeOf2, [this].concat(args)));
+
+    _defineProperty(_assertThisInitialized(_this), "state", {
+      playing: false,
+      audio: null,
+      playingPreviewUrl: null
+    });
+
+    _defineProperty(_assertThisInitialized(_this), "playAudio", function (previewUrl) {
+      return function () {
+        // This is so it calls the function itself for better practs it calls the refernce to the function
+        var audio = new Audio(previewUrl); //Audio is a global audio class, Passing in the previewUrl
+
+        if (!_this.state.playing) {
+          audio.play();
+
+          _this.setState({
+            playing: true,
+            audio: audio,
+            playingPreviewUrl: previewUrl
+          });
+        } else {
+          _this.state.audio.pause();
+
+          if (_this.state.playingPreviewUrl === previewUrl) {
+            _this.setState({
+              playing: false
+            });
+          } else {
+            audio.play();
+
+            _this.setState({
+              audio: audio,
+              playingPreviewUrl: previewUrl
+            });
+          }
+        }
+      };
+    });
+
+    _defineProperty(_assertThisInitialized(_this), "trackIcon", function (track) {
+      if (!track.preview_url) {
+        return _react.default.createElement("span", null, " N/A");
+      }
+
+      if (_this.state.playing && _this.state.playingPreviewUrl === track.preview_url) {
+        return _react.default.createElement("span", null, "| |");
+      }
+
+      return _react.default.createElement("span", null, "\u25B6 ");
+    });
+
+    return _this;
+  }
+
+  _createClass(Tracks, [{
+    key: "render",
+    value: function render() {
+      var _this2 = this;
+
+      var tracks = this.props.tracks;
+      return _react.default.createElement("div", null, tracks.map(function (track) {
+        var id = track.id,
+            name = track.name,
+            album = track.album,
+            preview_url = track.preview_url;
+        return _react.default.createElement("div", {
+          key: id,
+          onClick: _this2.playAudio(preview_url),
+          className: "track"
+        }, _react.default.createElement("img", {
+          src: album.images[0].url,
+          alt: "track-image",
+          className: "track-image"
+        }), _react.default.createElement("p", {
+          className: "track-text"
+        }, " ", name), _react.default.createElement("p", {
+          className: "track-icon"
+        }, _this2.trackIcon(track)));
+      }));
+    }
+  }]);
+
+  return Tracks;
+}(_react.Component);
+
+var _default = Tracks;
+exports.default = _default;
+},{"react":"../node_modules/react/index.js"}],"projects/music-app/components/App.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _react = _interopRequireWildcard(require("react"));
+
+var _Search = _interopRequireDefault(require("./Search"));
+
+var _Artist = _interopRequireDefault(require("./Artist"));
+
+var _Tracks = _interopRequireDefault(require("./Tracks"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; if (obj != null) { var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var API_ADDRESS = 'https://spotify-api-wrapper.appspot.com';
+
+var App =
+/*#__PURE__*/
+function (_Component) {
+  _inherits(App, _Component);
+
+  function App() {
+    var _getPrototypeOf2;
+
+    var _this;
+
+    _classCallCheck(this, App);
+
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(App)).call.apply(_getPrototypeOf2, [this].concat(args)));
+
+    _defineProperty(_assertThisInitialized(_this), "state", {
+      artist: null,
+      tracks: []
+    });
+
+    _defineProperty(_assertThisInitialized(_this), "searchArtist", function (artistQuery) {
+      fetch("".concat(API_ADDRESS, "/artist/").concat(artistQuery)).then(function (response) {
+        return response.json();
+      }).then(function (json) {
+        if (json.artists.total > 0) {
+          var artist = json.artists.items[0];
+
+          _this.setState({
+            artist: artist
+          });
+
+          fetch("".concat(API_ADDRESS, "/artist/").concat(artist.id, "/top-tracks")).then(function (response) {
+            return response.json();
+          }).then(function (json) {
+            return _this.setState({
+              tracks: json.tracks
+            });
+          }).catch(function (error) {
+            return alert(error.message);
+          });
+        }
+      }).catch(function (error) {
+        return alert(error.message);
+      });
+    });
+
+    return _this;
+  }
+
+  _createClass(App, [{
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      this.searchArtist('pentatonix');
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      return _react.default.createElement("div", null, _react.default.createElement("h2", null, "Music app"), _react.default.createElement(_Search.default, {
+        searchArtist: this.searchArtist
+      }), _react.default.createElement(_Artist.default, {
+        artist: this.state.artist
+      }), _react.default.createElement(_Tracks.default, {
+        tracks: this.state.tracks
+      }));
+    }
+  }]);
+
+  return App;
+}(_react.Component);
+
+var _default = App;
+exports.default = _default;
+},{"react":"../node_modules/react/index.js","./Search":"projects/music-app/components/Search.js","./Artist":"projects/music-app/components/Artist.js","./Tracks":"projects/music-app/components/Tracks.js"}],"projects/music-app/index.css":[function(require,module,exports) {
+var reloadCSS = require('_css_loader');
+
+module.hot.dispose(reloadCSS);
+module.hot.accept(reloadCSS);
+},{"./assets\\roboto-condensed.light.ttf":[["roboto-condensed.light.0d24a687.ttf","projects/music-app/assets/roboto-condensed.light.ttf"],"projects/music-app/assets/roboto-condensed.light.ttf"],"./assets\\economica-bold.ttf":[["economica-bold.817b4aab.ttf","projects/music-app/assets/economica-bold.ttf"],"projects/music-app/assets/economica-bold.ttf"],"_css_loader":"../node_modules/parcel-bundler/src/builtins/css-loader.js"}],"projects/music-app/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _react = _interopRequireDefault(require("react"));
+
+var _reactDom = _interopRequireDefault(require("react-dom"));
+
+var _App = _interopRequireDefault(require("./components/App"));
+
+require("./index.css");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var _default = _App.default;
+exports.default = _default;
+},{"react":"../node_modules/react/index.js","react-dom":"../node_modules/react-dom/index.js","./components/App":"projects/music-app/components/App.js","./index.css":"projects/music-app/index.css"}],"components/Header.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -38355,7 +37464,11 @@ var Header = function Header(_ref) {
     style: style
   }, _react.default.createElement(_reactRouterDom.Link, {
     to: "/jokes"
-  }, "Jokes"), " ")), children);
+  }, "Jokes"), " "), _react.default.createElement("h3", {
+    style: style
+  }, _react.default.createElement(_reactRouterDom.Link, {
+    to: "/music-app"
+  }, "Music App"), " ")), children);
 };
 
 var _default = Header;
@@ -38369,24 +37482,22 @@ var _reactDom = _interopRequireDefault(require("react-dom"));
 
 var _reactRouterDom = require("react-router-dom");
 
-var _createBrowserHistory = _interopRequireDefault(require("history/createBrowserHistory"));
+var _history = require("history");
 
 var _App = _interopRequireDefault(require("./components/App"));
 
 require("./index.css");
 
-var _path = require("path");
-
 var _Jokes = _interopRequireDefault(require("./components/Jokes"));
 
-var _reactHistory = require("react-history");
+var _musicApp = _interopRequireDefault(require("./projects/music-app"));
 
 var _Header = _interopRequireDefault(require("./components/Header"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 _reactDom.default.render(_react.default.createElement(_reactRouterDom.Router, {
-  history: (0, _createBrowserHistory.default)()
+  history: (0, _history.createBrowserHistory)()
 }, _react.default.createElement(_reactRouterDom.Switch, null, _react.default.createElement(_reactRouterDom.Route, {
   exact: true,
   path: "/",
@@ -38397,6 +37508,11 @@ _reactDom.default.render(_react.default.createElement(_reactRouterDom.Router, {
   path: "/jokes",
   render: function render() {
     return _react.default.createElement(_Header.default, null, _react.default.createElement(_Jokes.default, null));
+  }
+}), _react.default.createElement(_reactRouterDom.Route, {
+  path: "/music-app",
+  render: function render() {
+    return _react.default.createElement(_Header.default, null, _react.default.createElement(_musicApp.default, null));
   }
 }))), document.getElementById('root'));
 /* Testar
@@ -38457,7 +37573,7 @@ const lion1 = new Lion('Musfasa', 20, 'golden', 25);
 lion1.speak();
 lion1.roar();
 console.log(lion1);*/
-},{"react":"../node_modules/react/index.js","react-dom":"../node_modules/react-dom/index.js","react-router-dom":"../node_modules/react-router-dom/esm/react-router-dom.js","history/createBrowserHistory":"../node_modules/history/createBrowserHistory.js","./components/App":"components/App.js","./index.css":"index.css","path":"../node_modules/path-browserify/index.js","./components/Jokes":"components/Jokes.js","react-history":"../node_modules/react-history/index.js","./components/Header":"components/Header.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"react":"../node_modules/react/index.js","react-dom":"../node_modules/react-dom/index.js","react-router-dom":"../node_modules/react-router-dom/esm/react-router-dom.js","history":"../node_modules/history/esm/history.js","./components/App":"components/App.js","./index.css":"index.css","./components/Jokes":"components/Jokes.js","./projects/music-app":"projects/music-app/index.js","./components/Header":"components/Header.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -38485,7 +37601,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64989" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49949" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
