@@ -37390,7 +37390,7 @@ function (_Component) {
   _createClass(App, [{
     key: "componentDidMount",
     value: function componentDidMount() {
-      this.searchArtist('pentatonix');
+      this.searchArtist('bruno');
     }
   }, {
     key: "render",
